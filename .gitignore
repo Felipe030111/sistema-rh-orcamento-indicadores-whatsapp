@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local database and generated files
+*.db
+*.sqlite
+*.sqlite3
+*.xlsx
+
+# Node / Vite
+node_modules/
+dist/
+.vite/
+
+# Environment files
+.env
+.env.*
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+
+# Local helper outputs
+*.log
