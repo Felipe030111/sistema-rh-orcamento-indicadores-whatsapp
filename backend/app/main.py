@@ -4,7 +4,7 @@ from sqlalchemy import text
 
 from app.auth import criar_usuario_admin_se_necessario
 from app.database import Base, SessionLocal, engine
-from app.routers import auth, calculo, comparacao, demonstrativo, grupos, headcount, premissas, verbas, versoes
+from app.routers import automaticos, auth, calculo, comparacao, demonstrativo, grupos, headcount, premissas, verbas, versoes
 
 Base.metadata.create_all(bind=engine)
 
@@ -123,6 +123,7 @@ app.include_router(premissas.router, prefix="/api", tags=["Premissas"])
 app.include_router(calculo.router, prefix="/api", tags=["Calculo"])
 app.include_router(demonstrativo.router, prefix="/api", tags=["Demonstrativo"])
 app.include_router(comparacao.router, prefix="/api", tags=["Comparacao"])
+app.include_router(automaticos.router, prefix="/api", tags=["Relatorios automaticos"])
 
 
 @app.get("/")

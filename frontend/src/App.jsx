@@ -12,6 +12,16 @@ import Premissas from "./pages/Premissas.jsx";
 import Calculo from "./pages/Calculo.jsx";
 import Relatorios from "./pages/Relatorios.jsx";
 import Cadastros from "./pages/Cadastros.jsx";
+import IndicadoresHeadcount from "./pages/IndicadoresHeadcount.jsx";
+import IndicadoresHorasExtras from "./pages/IndicadoresHorasExtras.jsx";
+import IndicadoresSelecao from "./pages/IndicadoresSelecao.jsx";
+import IndicadoresAbsenteismo from "./pages/IndicadoresAbsenteismo.jsx";
+import IndicadoresTurnover from "./pages/IndicadoresTurnover.jsx";
+import IndicadoresTreinamento from "./pages/IndicadoresTreinamento.jsx";
+import IndicadoresAfastamentos from "./pages/IndicadoresAfastamentos.jsx";
+import IndicadoresDemografia from "./pages/IndicadoresDemografia.jsx";
+import IndicadoresFolha from "./pages/IndicadoresFolha.jsx";
+import RelatoriosAutomaticos from "./pages/RelatoriosAutomaticos.jsx";
 import { isLoggedIn } from "./api.js";
 
 function PrivateLayout({ children }) {
@@ -46,6 +56,16 @@ export default function App() {
       <Route path="/demonstrativo" element={<Navigate to="/relatorios" replace />} />
       <Route path="/comparacao" element={<Navigate to="/relatorios" replace />} />
       <Route path="/teste" element={<Navigate to="/calculo" replace />} />
+      <Route path="/indicadores/headcount" element={<PrivateLayout><IndicadoresHeadcount /></PrivateLayout>} />
+      <Route path="/indicadores/horas-extras" element={<PrivateLayout><IndicadoresHorasExtras /></PrivateLayout>} />
+      <Route path="/indicadores/selecao" element={<PrivateLayout><IndicadoresSelecao /></PrivateLayout>} />
+      <Route path="/indicadores/absenteismo" element={<PrivateLayout><IndicadoresAbsenteismo /></PrivateLayout>} />
+      <Route path="/indicadores/turnover" element={<PrivateLayout><IndicadoresTurnover /></PrivateLayout>} />
+      <Route path="/indicadores/treinamento" element={<PrivateLayout><IndicadoresTreinamento /></PrivateLayout>} />
+      <Route path="/indicadores/afastamentos" element={<PrivateLayout><IndicadoresAfastamentos /></PrivateLayout>} />
+      <Route path="/indicadores/demografia" element={<PrivateLayout><IndicadoresDemografia /></PrivateLayout>} />
+      <Route path="/indicadores/folha" element={<PrivateLayout><IndicadoresFolha /></PrivateLayout>} />
+      <Route path="/automaticos" element={<PrivateLayout><RelatoriosAutomaticos /></PrivateLayout>} />
     </Routes>
   );
 }
