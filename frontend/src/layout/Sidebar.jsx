@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 const icons = {
   versoes: "\u{1F501}",
@@ -26,6 +26,10 @@ const icons = {
   home: "\u{1F3E0}",
   robot: "\u{1F916}",
   send: "\u{1F4E4}",
+  chat: "\u{1F4AC}",
+  topics: "\u{1F5C2}\uFE0F",
+  flow: "\u{1F9ED}",
+  ticket: "\u2705",
 };
 
 const orcamentoLinks = [
@@ -54,6 +58,13 @@ const automaticosLinks = [
   ["/automaticos", "Gestao dos Bots", icons.robot],
 ];
 
+const chatbotLinks = [
+  ["/chatbot-rh/assuntos", "Assuntos", icons.topics],
+  ["/chatbot-rh/fluxos", "Subassuntos", icons.flow],
+  ["/chatbot-rh/simulacao", "Simulacao", icons.chat],
+  ["/chatbot-rh/chamados", "Chamados", icons.ticket],
+];
+
 const cadastros = [
   ["/cadastros/empresas", "Empresas", icons.company],
   ["/cadastros/departamentos", "Departamentos", icons.department],
@@ -63,6 +74,7 @@ const cadastros = [
 function moduloPelaRota(pathname) {
   if (pathname.startsWith("/indicadores")) return "indicadores";
   if (pathname.startsWith("/automaticos")) return "automaticos";
+  if (pathname.startsWith("/chatbot-rh")) return "chatbot";
   return localStorage.getItem("modulo_ativo") || "orcamento";
 }
 
@@ -70,7 +82,6 @@ export default function Sidebar() {
   const [fechado, setFechado] = useState(false);
   const [cadastrosAberto, setCadastrosAberto] = useState(true);
   const location = useLocation();
-  const navigate = useNavigate();
   const [modulo, setModulo] = useState(() => moduloPelaRota(location.pathname));
 
   useEffect(() => {
@@ -83,30 +94,16 @@ export default function Sidebar() {
     return () => window.removeEventListener("modulo-change", handler);
   }, []);
 
-  function trocarModulo(valor) {
-    localStorage.setItem("modulo_ativo", valor);
-    setModulo(valor);
-    if (valor === "indicadores") navigate("/indicadores/headcount");
-    else if (valor === "automaticos") navigate("/automaticos");
-    else navigate("/calculo");
-  }
-
-  const links = modulo === "indicadores" ? indicadoresLinks : modulo === "automaticos" ? automaticosLinks : orcamentoLinks;
+  const links = modulo === "indicadores" ? indicadoresLinks : modulo === "automaticos" ? automaticosLinks : modulo === "chatbot" ? chatbotLinks : orcamentoLinks;
+  const brandTitle = modulo === "indicadores" ? "Indicadores de RH" : modulo === "automaticos" ? "Relatorio Automatico" : modulo === "chatbot" ? "Chatbot RH" : "Orcamento e Headcount";
 
   return (
     <aside className={`sidebar ${fechado ? "collapsed" : ""}`}>
       <div className="brand">
         <div className="logo-tile"><img src="/cli_hero2.png" alt="CLI" /></div>
-        {!fechado && <span>{modulo === "indicadores" ? "Indicadores de RH" : modulo === "automaticos" ? "Relatorio Automatico" : "Orcamento e Headcount"}</span>}
+        {!fechado && <span>{brandTitle}</span>}
       </div>
       <button className="menu-toggle" onClick={() => setFechado(!fechado)}>{fechado ? ">" : "<"}</button>
-      {!fechado && (
-        <div className="module-switch">
-          <button className={modulo === "orcamento" ? "active" : ""} onClick={() => trocarModulo("orcamento")}>Orcamento</button>
-          <button className={modulo === "indicadores" ? "active" : ""} onClick={() => trocarModulo("indicadores")}>Indicadores</button>
-          <button className={modulo === "automaticos" ? "active" : ""} onClick={() => trocarModulo("automaticos")}>Bots</button>
-        </div>
-      )}
       <nav>
         {modulo === "orcamento" && (
           <div className="nav-group">

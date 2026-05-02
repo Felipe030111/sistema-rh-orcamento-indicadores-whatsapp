@@ -1,5 +1,5 @@
 ﻿import React from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Header from "./layout/Header.jsx";
 import Sidebar from "./layout/Sidebar.jsx";
 import Login from "./pages/Login.jsx";
@@ -22,10 +22,15 @@ import IndicadoresAfastamentos from "./pages/IndicadoresAfastamentos.jsx";
 import IndicadoresDemografia from "./pages/IndicadoresDemografia.jsx";
 import IndicadoresFolha from "./pages/IndicadoresFolha.jsx";
 import RelatoriosAutomaticos from "./pages/RelatoriosAutomaticos.jsx";
+import ChatbotRH from "./pages/ChatbotRH.jsx";
 import { isLoggedIn } from "./api.js";
 
 function PrivateLayout({ children }) {
+  const location = useLocation();
   if (!isLoggedIn()) return <Navigate to="/login" replace />;
+  if (location.pathname === "/") {
+    return <div className="module-entry-shell">{children}</div>;
+  }
   return (
     <div className="app-shell">
       <Sidebar />
@@ -66,6 +71,8 @@ export default function App() {
       <Route path="/indicadores/demografia" element={<PrivateLayout><IndicadoresDemografia /></PrivateLayout>} />
       <Route path="/indicadores/folha" element={<PrivateLayout><IndicadoresFolha /></PrivateLayout>} />
       <Route path="/automaticos" element={<PrivateLayout><RelatoriosAutomaticos /></PrivateLayout>} />
+      <Route path="/chatbot-rh" element={<Navigate to="/chatbot-rh/assuntos" replace />} />
+      <Route path="/chatbot-rh/:secao" element={<PrivateLayout><ChatbotRH /></PrivateLayout>} />
     </Routes>
   );
 }
