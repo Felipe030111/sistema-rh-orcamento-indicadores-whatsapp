@@ -205,7 +205,7 @@ export default function Relatorios() {
       {erro && <p className="error">{erro}</p>}
 
       <div className="executive-matrix">
-        <table>
+        <table className="report-table">
           <thead>
             <tr><th>Indicador</th><th>Versao A</th><th>Versao B</th><th>Diferenca</th></tr>
           </thead>
@@ -271,7 +271,7 @@ export default function Relatorios() {
       <section className="section-band">
         <h2>Comparacao por grupo de verba</h2>
         <p className="hint">Clique no grupo para abrir as verbas que compoem o total.</p>
-        <table>
+        <table className="report-table">
           <thead><tr><th>Grupo / verba</th><th>Versao A</th><th>Versao B</th><th>Diferenca</th><th>%</th></tr></thead>
           <tbody>
             {linhasVerbas.map((linha) => (
@@ -294,7 +294,7 @@ export default function Relatorios() {
       {aba === "dimensao" && (
       <section className="section-band">
         <h2>Comparacao por {dimensao === "centro_custo" ? "centro de custo" : dimensao}</h2>
-        <table>
+        <table className="report-table">
           <thead><tr><th>Item</th><th>Versao A</th><th>Versao B</th><th>Diferenca</th><th>%</th></tr></thead>
           <tbody>
             {linhasDimensao.map((linha) => (

@@ -145,6 +145,22 @@ const exemplosVerbas = {
     formula_exibicao: "Valor por vida/faixa etaria x reajuste",
     ordem_calculo: 80,
   },
+  plr: {
+    codigo: "PLR",
+    codigo_folha: "7001",
+    nome: "PLR",
+    descricao: "Participacao nos lucros e resultados por target do grupo/cargo.",
+    agrupamento: "Remuneracao Variavel",
+    subgrupo: "PLR",
+    natureza: "Provento",
+    tipo_verba: "variavel",
+    metodo_calculo: "percentual_sobre_salario",
+    formula_exibicao: "Salario x target de salarios do grupo",
+    reajustes_grupo_json: JSON.stringify([
+      { grupo: "Geral", mes_inicio: 12, percentual: 200, valor: 0, quantidade: 2, observacao: "Target de 2 salarios" },
+    ]),
+    ordem_calculo: 35,
+  },
 };
 
 const meses = [
@@ -160,6 +176,16 @@ const meses = [
   [10, "Outubro"],
   [11, "Novembro"],
   [12, "Dezembro"],
+];
+
+const modelosVerba = [
+  ["salario", "Salario"],
+  ["plr", "PLR"],
+  ["hora_extra", "Hora extra"],
+  ["plano_saude", "Plano de saude"],
+  ["beneficio", "Beneficio simples"],
+  ["encargo", "Encargo"],
+  ["manual", "Manual / outra"],
 ];
 
 function Campo({ label, children }) {
@@ -202,6 +228,7 @@ export default function Verbas() {
   const [grupos, setGrupos] = useState([]);
   const [form, setForm] = useState(formVazio);
   const [editandoId, setEditandoId] = useState(null);
+  const [modeloVerba, setModeloVerba] = useState("salario");
 
   const reajustes = useMemo(() => parseReajustes(form.reajustes_grupo_json), [form.reajustes_grupo_json]);
   const gruposDisponiveis = useMemo(() => {
@@ -234,6 +261,13 @@ export default function Verbas() {
   function editar(verba) {
     setEditandoId(verba.id);
     setForm({ ...formVazio, ...verba });
+    const codigo = String(verba.codigo || "").toLowerCase();
+    if (codigo.includes("plr")) setModeloVerba("plr");
+    else if (codigo.includes("hora")) setModeloVerba("hora_extra");
+    else if (codigo.includes("saude")) setModeloVerba("plano_saude");
+    else if (codigo.includes("fgts") || codigo.includes("inss")) setModeloVerba("encargo");
+    else if (codigo.includes("salario")) setModeloVerba("salario");
+    else setModeloVerba("manual");
   }
 
   async function excluir(id) {
@@ -277,6 +311,24 @@ export default function Verbas() {
   function aplicarExemplo(chave) {
     setForm({ ...formVazio, ...exemplosVerbas[chave] });
     setEditandoId(null);
+    if (chave === "salario_base") setModeloVerba("salario");
+    if (chave === "hora_extra_50") setModeloVerba("hora_extra");
+    if (chave === "plano_saude") setModeloVerba("plano_saude");
+    if (chave === "plr") setModeloVerba("plr");
+  }
+
+  function escolherModelo(id) {
+    setModeloVerba(id);
+    const ajustes = {
+      salario: { metodo_calculo: "valor_fixo", tipo_verba: "fixa", agrupamento: "Remuneracao Fixa" },
+      plr: { metodo_calculo: "percentual_sobre_salario", tipo_verba: "variavel", agrupamento: "Remuneracao Variavel" },
+      hora_extra: { metodo_calculo: "horas_x_valor_hora_x_fator", tipo_verba: "variavel", agrupamento: "Jornada e Ponto" },
+      plano_saude: { metodo_calculo: "formula_customizada", tipo_verba: "calculada", agrupamento: "Beneficios" },
+      beneficio: { metodo_calculo: "quantidade_x_valor_unitario", tipo_verba: "fixa", agrupamento: "Beneficios" },
+      encargo: { metodo_calculo: "percentual_sobre_salario", tipo_verba: "calculada", agrupamento: "Encargos Patronais" },
+      manual: { metodo_calculo: "manual", tipo_verba: "manual" },
+    };
+    setForm({ ...form, ...(ajustes[id] || {}) });
   }
 
   useEffect(() => { carregar().catch(() => { setVerbas([]); setGrupos([]); }); }, [versaoId]);
@@ -298,7 +350,16 @@ export default function Verbas() {
           <strong>Exemplos prontos</strong>
           <button type="button" className="secondary" onClick={() => aplicarExemplo("salario_base")}>Salario Base</button>
           <button type="button" className="secondary" onClick={() => aplicarExemplo("hora_extra_50")}>Hora Extra 50%</button>
+          <button type="button" className="secondary" onClick={() => aplicarExemplo("plr")}>PLR</button>
           <button type="button" className="secondary" onClick={() => aplicarExemplo("plano_saude")}>Plano de Saude</button>
+        </div>
+
+        <div className="payroll-type-picker">
+          {modelosVerba.map(([id, label]) => (
+            <button type="button" key={id} className={modeloVerba === id ? "active" : "secondary"} onClick={() => escolherModelo(id)}>
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="payroll-grid simple">
@@ -309,16 +370,66 @@ export default function Verbas() {
           <Campo label="Subgrupo"><input value={form.subgrupo || ""} onChange={(e) => set("subgrupo", e.target.value)} /></Campo>
           <Campo label="Natureza"><select value={form.natureza} onChange={(e) => set("natureza", e.target.value)}><option>Provento</option><option>Desconto</option><option>Encargo</option><option>Provisao</option><option>Beneficio</option><option>Informativa</option></select></Campo>
           <Campo label="Tipo da verba"><select value={form.tipo_verba} onChange={(e) => set("tipo_verba", e.target.value)}><option value="fixa">Fixa</option><option value="variavel">Variavel</option><option value="calculada">Calculada</option><option value="manual">Manual</option><option value="importada">Importada</option></select></Campo>
-          <Campo label="Como calcula"><select value={form.metodo_calculo} onChange={(e) => set("metodo_calculo", e.target.value)}><option value="valor_fixo">Valor fixo</option><option value="percentual_sobre_salario">Percentual sobre salario</option><option value="horas_x_valor_hora_x_fator">Por hora</option><option value="quantidade_x_valor_unitario">Quantidade x valor</option><option value="formula_customizada">Regra especifica</option><option value="manual">Manual</option></select></Campo>
-          <Campo label="Valor"><input type="number" value={form.valor_fixo} onChange={(e) => set("valor_fixo", e.target.value)} /></Campo>
-          <Campo label="Percentual"><input type="number" value={form.percentual} onChange={(e) => set("percentual", e.target.value)} /></Campo>
-          <Campo label="Fator"><input type="number" value={form.fator} onChange={(e) => set("fator", e.target.value)} /></Campo>
-          <Campo label="Quantidade padrao"><input type="number" value={form.quantidade_padrao} onChange={(e) => set("quantidade_padrao", e.target.value)} /></Campo>
           <Campo label="Descricao"><textarea value={form.descricao || ""} onChange={(e) => set("descricao", e.target.value)} /></Campo>
           <Campo label="Observacao"><textarea value={form.observacao || ""} onChange={(e) => set("observacao", e.target.value)} /></Campo>
           <Check label="Ativa" checked={form.ativo} onChange={(v) => set("ativo", v)} />
           <Check label="Obrigatoria" checked={form.obrigatoria} onChange={(v) => set("obrigatoria", v)} />
           <Check label="Editavel" checked={form.editavel} onChange={(v) => set("editavel", v)} />
+        </div>
+
+        <div className="payroll-specific-card">
+          {modeloVerba === "salario" && (
+            <>
+              <h3>Campos de salario</h3>
+              <p className="hint">O salario vem do cadastro do headcount. Aqui voce define data-base e reajuste por grupo.</p>
+              <Campo label="Regra exibida"><input value={form.formula_exibicao || ""} onChange={(e) => set("formula_exibicao", e.target.value)} placeholder="Salario x headcount x reajuste do grupo" /></Campo>
+            </>
+          )}
+          {modeloVerba === "plr" && (
+            <>
+              <h3>Campos de PLR</h3>
+              <p className="hint">Use as regras por grupo para informar o target. Exemplo: quantidade 2 = dois salarios.</p>
+              <Campo label="Formula exibida"><input value={form.formula_exibicao || ""} onChange={(e) => set("formula_exibicao", e.target.value)} placeholder="Salario x target de salarios" /></Campo>
+            </>
+          )}
+          {modeloVerba === "hora_extra" && (
+            <>
+              <h3>Campos de hora extra</h3>
+              <Campo label="Fator"><input type="number" value={form.fator} onChange={(e) => set("fator", e.target.value)} placeholder="1.5 para 50%" /></Campo>
+              <Campo label="Media de horas"><input type="number" value={form.quantidade_padrao} onChange={(e) => set("quantidade_padrao", e.target.value)} /></Campo>
+            </>
+          )}
+          {modeloVerba === "plano_saude" && (
+            <>
+              <h3>Campos de plano de saude</h3>
+              <p className="hint">Pode considerar titular e dependentes do headcount. Use as regras por grupo para valor, faixa ou reajuste.</p>
+              <Check label="Aplica ao titular" checked={form.aplica_colaborador} onChange={(v) => set("aplica_colaborador", v)} />
+              <Check label="Aplica aos dependentes" checked={form.exige_parametro_usuario} onChange={(v) => set("exige_parametro_usuario", v)} />
+              <Campo label="Tipo de tabela"><select value={form.parametro_esperado || "valor_por_vida"} onChange={(e) => set("parametro_esperado", e.target.value)}><option value="valor_por_vida">Valor por vida</option><option value="faixa_idade">Faixa de idade</option><option value="valor_fixo_grupo">Valor fixo por grupo</option></select></Campo>
+              <Campo label="Reajuste budget (%)"><input type="number" value={form.percentual} onChange={(e) => set("percentual", e.target.value)} /></Campo>
+            </>
+          )}
+          {modeloVerba === "beneficio" && (
+            <>
+              <h3>Campos de beneficio simples</h3>
+              <Campo label="Valor unitario ou mensal"><input type="number" value={form.valor_fixo} onChange={(e) => set("valor_fixo", e.target.value)} /></Campo>
+              <Campo label="Quantidade / dias"><input type="number" value={form.quantidade_padrao} onChange={(e) => set("quantidade_padrao", e.target.value)} /></Campo>
+            </>
+          )}
+          {modeloVerba === "encargo" && (
+            <>
+              <h3>Campos de encargo</h3>
+              <Campo label="Percentual sobre remuneracao"><input type="number" value={form.percentual} onChange={(e) => set("percentual", e.target.value)} /></Campo>
+              <Campo label="Base usada"><input value={form.id_base_calculo || ""} onChange={(e) => set("id_base_calculo", e.target.value)} placeholder="Ex.: remuneracao" /></Campo>
+            </>
+          )}
+          {modeloVerba === "manual" && (
+            <>
+              <h3>Campos manuais</h3>
+              <Campo label="Valor"><input type="number" value={form.valor_fixo} onChange={(e) => set("valor_fixo", e.target.value)} /></Campo>
+              <Campo label="Regra livre"><textarea value={form.formula_customizada || ""} onChange={(e) => set("formula_customizada", e.target.value)} /></Campo>
+            </>
+          )}
         </div>
 
         <div className="reajuste-box">

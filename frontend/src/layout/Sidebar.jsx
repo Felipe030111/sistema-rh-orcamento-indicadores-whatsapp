@@ -125,11 +125,6 @@ export default function Sidebar() {
           </div>
         )}
 
-        <NavLink to="/" title="Trocar modulo" className={({ isActive }) => (isActive ? "active" : "")}>
-          <span className="nav-icon">{icons.home}</span>
-          {!fechado && <span>Trocar modulo</span>}
-        </NavLink>
-
         {links.map(([to, label, icon]) => (
           <NavLink key={to} to={to} title={label} className={({ isActive }) => (isActive ? "active" : "")}>
             <span className="nav-icon">{icon}</span>

@@ -24,7 +24,7 @@ const vazio = {
   centro_custo: "CC-ADM",
   grupo: "Geral",
   salario: 0,
-  qtde_dependentes: 0,
+  qtde_dependentes: 2,
   idades_dependentes: "",
   dependentes_json: "[]",
   data_admissao: "",
@@ -32,6 +32,11 @@ const vazio = {
   status: "ativo",
   justificativa: "Cadastro manual.",
 };
+
+const dependentesPadraoColaborador = [
+  { nome: "", idade: "" },
+  { nome: "", idade: "" },
+];
 
 function SelectCampo({ campo, value, onChange }) {
   return (
@@ -94,7 +99,7 @@ export default function Headcount() {
   const [arquivo, setArquivo] = useState(null);
   const [mensagem, setMensagem] = useState("");
   const [erro, setErro] = useState("");
-  const [dependentes, setDependentes] = useState([]);
+  const [dependentes, setDependentes] = useState(dependentesPadraoColaborador);
   const [expandido, setExpandido] = useState({});
 
   async function carregar() {
@@ -110,7 +115,9 @@ export default function Headcount() {
 
   async function salvar(event) {
     event.preventDefault();
-    const dependentesParaSalvar = form.tipo === "vaga" ? dependentesPrevistos(form.qtde_dependentes) : dependentes;
+    const dependentesParaSalvar = form.tipo === "vaga"
+      ? dependentesPrevistos(form.qtde_dependentes)
+      : dependentes.filter((dep) => dep.nome || dep.idade);
     const payload = {
       ...form,
       salario: Number(form.salario),
@@ -126,7 +133,7 @@ export default function Headcount() {
       setMensagem("Headcount adicionado.");
     }
     setForm(vazio);
-    setDependentes([]);
+    setDependentes(dependentesPadraoColaborador);
     setEditandoId(null);
     carregar();
   }
@@ -181,6 +188,32 @@ export default function Headcount() {
     setDependentes([...dependentes, { nome: "", idade: "" }]);
   }
 
+  function trocarTipo(valor) {
+    setForm({ ...form, tipo: valor, qtde_dependentes: valor === "vaga" ? 3 : 2 });
+    if (valor === "colaborador" && dependentes.length === 0) {
+      setDependentes(dependentesPadraoColaborador);
+    }
+  }
+
+  async function baixarModelo() {
+    setMensagem("");
+    setErro("");
+    try {
+      const response = await api.get("/headcount/modelo-excel", { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "modelo_headcount.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setMensagem("Modelo Excel baixado. Ele contem a aba headcount e a aba arvore_importacao.");
+    } catch (error) {
+      setErro(error.response?.data?.detail || "Nao foi possivel baixar o modelo Excel. Confira se o backend esta aberto.");
+    }
+  }
+
   function atualizarDependente(index, campo, valor) {
     setDependentes(dependentes.map((dep, i) => i === index ? { ...dep, [campo]: valor } : dep));
   }
@@ -207,15 +240,32 @@ export default function Headcount() {
         <h2>Importar Excel</h2>
         <form className="form-row" onSubmit={importar}>
           <input type="file" accept=".xlsx,.xls" onChange={(e) => setArquivo(e.target.files[0])} required />
+          <button type="button" className="secondary" onClick={baixarModelo}>Baixar modelo Excel</button>
           <button>Importar headcount</button>
         </form>
-        <p className="hint">Colunas: nome, tipo, cargo, empresa, departamento, centro_custo, grupo, salario, status, dependentes_json, data_entrada, data_saida_prevista.</p>
+        <p className="hint">Baixe o modelo, preencha colaboradores, vagas e dependentes, depois importe o arquivo preenchido.</p>
+        <div className="import-dependency-tree">
+          {[
+            ["1", "Versao", "cenario onde a carga sera salva"],
+            ["2", "Empresa > Departamento > Centro de custo", "base de filtros, rateio e relatorios"],
+            ["3", "Cargo > Grupo", "base de regras de verba, PLR, adicionais e reajustes"],
+            ["4", "Titular ou vaga", "define se conta como realizado ou planejado"],
+            ["5", "Periodo ativo", "data de entrada e saida prevista definem os meses do calculo"],
+            ["6", "Dependentes", "base para plano de saude, odonto e beneficios por vida/faixa etaria"],
+          ].map(([nivel, titulo, texto]) => (
+            <div key={nivel}>
+              <strong>{nivel}</strong>
+              <span>{titulo}</span>
+              <small>{texto}</small>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="section-band">
         <h2>{editandoId ? "Editar headcount" : "Adicionar headcount"}</h2>
         <form className="form-grid" onSubmit={salvar}>
-          <Campo label="Tipo"><SelectCampo campo="tipo" value={form.tipo} onChange={(valor) => setForm({ ...form, tipo: valor })} /></Campo>
+          <Campo label="Tipo"><SelectCampo campo="tipo" value={form.tipo} onChange={trocarTipo} /></Campo>
           <Campo label="Matricula ou codigo"><input value={form.matricula} onChange={(e) => setForm({ ...form, matricula: e.target.value })} /></Campo>
           <Campo label="Nome"><input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} required /></Campo>
           <Campo label="Cargo"><SelectCampo campo="cargo" value={form.cargo} onChange={(valor) => setForm({ ...form, cargo: valor })} /></Campo>
@@ -230,7 +280,7 @@ export default function Headcount() {
           <Campo label="Status"><SelectCampo campo="status" value={form.status} onChange={(valor) => setForm({ ...form, status: valor })} /></Campo>
           <Campo label="Justificativa"><input value={form.justificativa} onChange={(e) => setForm({ ...form, justificativa: e.target.value })} required /></Campo>
           <button>{editandoId ? "Salvar edicao" : "Adicionar"}</button>
-          {editandoId && <button type="button" className="secondary" onClick={() => { setEditandoId(null); setForm(vazio); }}>Cancelar</button>}
+          {editandoId && <button type="button" className="secondary" onClick={() => { setEditandoId(null); setForm(vazio); setDependentes(dependentesPadraoColaborador); }}>Cancelar</button>}
         </form>
 
         {form.tipo !== "vaga" && (
